@@ -465,11 +465,17 @@ public class Main {
 // 4. Wylistuj wszystkie firmy z Warszawy. Posortuj je po ilości zakupów (rosnąco) i ilości pracowników (malejąco).
 //        companies_warsaw_sorted_by_purchases_and_employees(companies);
 // 5. Zwróć firmę z największą ilością pracowników, która pochodzi z Kijowa.
+//        companies_with_most_employees_from_kijev(companies);
 // 6. Zwróć firmę z najkrótszą nazwą
+//        company_with_shortest_name(companies);
 // 7. Zwróć firmę która nie pochodzi z Kijowa, Londynu i Detroit, która ma najmniej kupionych produktów.
+//        company_from_elsewhere_with_least_purchases(companies);
 // 8. Każdej firmie dodaj po 1 pracowniku, jeśli pochodzi z Kijowa lub Detroit
+//        company_increase_employees(companies);
 // 9. ** Zwróć MAPĘ w której kluczem jest nazwa firmy, a wartością ilość pracowników w tej firmie (https://howtodoinjava.com/java8/collect-stream-to-map/)
+//        company_name_to_employees(companies);
 // 10.** Zwróć Mapę w której kluczem jest miejscowość a wartością jest LISTA FIRM z tamtej miejscowości (Map<String, List<Company>) (https://stackoverflow.com/questions/24917053/collecting-hashmapstring-liststring-java-8)
+//        companies_grouped_by_location(companies);
 // 11. Zwróć firmę która dokonała zakupów na największą kwotę
 //        company_11_zakupy_najwieksze(companies);
 // 12. Zwróć firmę która kupiła najwięcej produktów za kwotę wyższą niż 10 k
@@ -479,7 +485,7 @@ public class Main {
 // 14. Wypisz firmy które 15 stycznia 2018 kupiły "Network Switch"
 //        company_14_network(companies);
 // 15. Znajdź firmę która kupuje najwięcej kawy
-
+//        company_with_most_coffee(companies);
 // 16. Wypisz ile łącznie zostało kupionej kawy Arabica w miesiącu styczniu
 //        company_16_arabica_january(companies);
 // 17. Wypisz ile łącznie kawy (Arabica i Roubsta) zostało kupionej w dni parzyste.
@@ -487,7 +493,7 @@ public class Main {
 // 18. Zwróć Mapę (Map<Product, Set<Company>>) w której kluczem jest typ kawy (powinny być dwie, Arabica i Robusta) i wartością są listy firm które kupiły podaną kawę chociaż raz.
 //        company_18_mapa_kaw(companies);
 // 19. Zwróć firmę która w styczniu kupiła najwięcej paliwa (ropy)
-//        company_19_most_oil_january(companies);
+        company_19_most_oil_january(companies);
 // 20. Zwróć firmę której proporcja wydanych pieniędzy do ilości pracowników jest najwyższa
 //        company_20_money_vs_employees(companies);
 // 21. Zwróć firmę która najwięcej wydaje na artykuły biurowe
@@ -522,6 +528,214 @@ public class Main {
 // 40. Wymyśl 5 ciekawych zapytań i spróbuj je zrealizować. Najciekawsze polecenie otrzyma nagrodę-niespodziankę z Baltimore :P
     }
 
+    private static void company_19_most_oil_january(List<Company> companies) {
+        Optional<Company> optionalCompany = companies.stream()
+                .max((c1, c2) -> Double.compare(
+                        c1.getPurchaseList().stream()
+                                .filter(purchase -> purchase.getPurchaseDate().getMonth() == Month.JANUARY)
+                                .filter(purchase -> purchase.getProduct().getName().equalsIgnoreCase("Fuel, oil"))
+                                .mapToDouble(Purchase::getQuantity)
+                                .sum(),
+                        c2.getPurchaseList().stream()
+                                .filter(purchase -> purchase.getPurchaseDate().getMonth() == Month.JANUARY)
+                                .filter(purchase -> purchase.getProduct().getName().equalsIgnoreCase("Fuel, oil"))
+                                .mapToDouble(Purchase::getQuantity)
+                                .sum()));
+
+        if (optionalCompany.isPresent()) {
+            Company company = optionalCompany.get();
+            System.out.println(company.getName());
+        }
+    }
+
+    private static void company_17_arabica_robusta_even(List<Company> companies) {
+        double sumCompanies = companies.stream().mapToDouble(company -> {
+            double sum = company.getPurchaseList()
+                    .stream()
+                    .filter(purchase -> purchase.getPurchaseDate().getDayOfMonth() % 2 == 0)
+                    .filter(purchase -> purchase.getProduct().getName().contains("Arabica") || purchase.getProduct().getName().contains("Robusta"))
+                    .mapToDouble(Purchase::getQuantity).sum();
+            return sum;
+        }).sum();
+
+        System.out.println("Sum for companies: " + sumCompanies);
+    }
+
+    private static void company_16_arabica_january(List<Company> companies) {
+        double sumCompanies = companies.stream().mapToDouble(company -> {
+            double sum = company.getPurchaseList()
+                    .stream()
+                    .filter(purchase -> purchase.getPurchaseDate().getMonth() == Month.JANUARY)
+                    .filter(purchase -> purchase.getProduct().getName().contains("Arabica"))
+                    .mapToDouble(Purchase::getQuantity).sum();
+            return sum;
+        }).sum();
+
+        System.out.println("Companies, sum coffee: " + sumCompanies);
+    }
+
+    private static void company_with_most_coffee(List<Company> companies) {
+        Optional<Company> optionalCompany = companies.stream().max((c1, c2) -> {
+            double sum1 = c1.getPurchaseList()
+                    .stream()
+                    .filter(purchase -> purchase.getProduct().getName().contains("Coffee"))
+                    .mapToDouble(Purchase::getQuantity).sum();
+            double sum2 = c2.getPurchaseList()
+                    .stream()
+                    .filter(purchase -> purchase.getProduct().getName().contains("Coffee"))
+                    .mapToDouble(Purchase::getQuantity).sum();
+            return Double.compare(sum1, sum2);
+        });
+
+        if (optionalCompany.isPresent()) {
+            Company company = optionalCompany.get();
+            System.out.println(company.getName());
+        }
+    }
+
+    private static void company_14_network(List<Company> companies) {
+        List<Company> companiesResult = companies.stream()
+                .filter(company -> company.getPurchaseList()
+                        .stream()
+                        .filter(purchase -> purchase.getProduct().getName().equalsIgnoreCase("Network Switch")
+                                && purchase.getPurchaseDate().isEqual(LocalDate.of(2018, 1, 15)))
+                        .count() > 0)
+                .collect(Collectors.toList());
+    }
+
+    private static void company_13_najwiecej_hajsu(List<Company> companies) {
+        Map<String, Double> nameToEmployees = companies.stream()
+                .collect(Collectors.toMap(
+                        company -> company.getCityHeadquarters(),
+                        company -> company.getPurchaseList().stream()
+                                .mapToDouble(purchase -> purchase.getQuantity() * purchase.getProduct().getPrice())
+                                .sum(),
+                        // jeśli trafimy na dwie firmy o tej samej nazwie, to weź liczbę pracowników (wartość) i zastosuj poniższą metodę
+                        (d1, d2) -> {
+                            return d1 + d2;
+                        }
+                ));
+        nameToEmployees.entrySet().forEach(System.out::println);
+    }
+
+    private static void company_12_zakupy_10k(List<Company> companies) {
+        Optional<Company> optionalCompany = companies.stream()
+                .max(new Comparator<Company>() {
+                    @Override
+                    public int compare(Company company, Company t1) {
+                        double sum = company.getPurchaseList().stream()
+                                .filter(purchase -> purchase.getProduct().getPrice() > 10000)
+                                .mapToDouble(Purchase::getQuantity)
+                                .sum();
+                        double sum2 = t1.getPurchaseList().stream()
+                                .filter(purchase -> purchase.getProduct().getPrice() > 10000)
+                                .mapToDouble(Purchase::getQuantity)
+                                .sum();
+                        return Double.compare(sum, sum2);
+                    }
+                });
+        if (optionalCompany.isPresent()) {
+            Company company = optionalCompany.get();
+            System.out.println(company.getName());
+        }
+    }
+
+    private static void company_11_zakupy_najwieksze(List<Company> companies) {
+        Optional<Company> optionalCompany = companies.stream()
+                .max(new Comparator<Company>() {
+                    @Override
+                    public int compare(Company company, Company t1) {
+                        double sum = company.getPurchaseList().stream()
+                                .mapToDouble(purchase -> purchase.getQuantity() * purchase.getProduct().getPrice())
+                                .sum();
+                        double sum2 = t1.getPurchaseList().stream()
+                                .mapToDouble(purchase -> purchase.getQuantity() * purchase.getProduct().getPrice())
+                                .sum();
+                        return Double.compare(sum, sum2);
+                    }
+                });
+        if (optionalCompany.isPresent()) {
+            Company company = optionalCompany.get();
+            System.out.println(company.getName());
+        }
+    }
+
+    private static void companies_grouped_by_location(List<Company> companies) {
+        Map<String, List<Company>> nameToEmployees = companies.stream()
+                .collect(Collectors.toMap(
+                        company -> company.getCityHeadquarters(),
+                        company -> List.of(company),
+                        // jeśli trafimy na dwie firmy o tej samej nazwie, to weź liczbę pracowników (wartość) i zastosuj poniższą metodę
+                        (list1, list2) -> {
+                            List<Company> companiesCollected = new ArrayList<>(list1);
+                            companiesCollected.addAll(list2);
+                            return companiesCollected;
+                        }
+                ));
+
+        nameToEmployees.entrySet().forEach(System.out::println);
+    }
+
+    private static void company_name_to_employees(List<Company> companies) {
+        Map<String, Integer> nameToEmployees = companies.stream()
+                .collect(Collectors.toMap(
+                        company -> company.getName(),
+                        company -> company.getEmployees(),
+                        // jeśli trafimy na dwie firmy o tej samej nazwie, to weź liczbę pracowników (wartość) i zastosuj poniższą metodę
+                        (integer, integer2) -> integer + integer2
+                ));
+
+        nameToEmployees.entrySet().forEach(System.out::println);
+    }
+
+    private static void company_increase_employees(List<Company> companies) {
+        companies.stream()
+                .filter(company -> company.getName().equalsIgnoreCase("Detroit") || company.getName().equalsIgnoreCase("Kijev"))
+                .forEach(company -> company.setEmployees(company.getEmployees() + 1));
+    }
+
+    private static void company_from_elsewhere_with_least_purchases(List<Company> companies) {
+        Optional<Company> optionalCompany = companies.stream()
+                .filter(company -> !company.getName().equalsIgnoreCase("Kijev") &&
+                        !company.getName().equalsIgnoreCase("London") &&
+                        !company.getName().equalsIgnoreCase("Detroit"))
+                .min((company, t1) -> {
+                    double ilosc1 = company.getPurchaseList().stream().mapToDouble(purchase -> purchase.getQuantity()).sum();
+                    double ilosc2 = t1.getPurchaseList().stream().mapToDouble(purchase -> purchase.getQuantity()).sum();
+                    return Double.compare(ilosc1, ilosc2);
+                });
+
+        if (optionalCompany.isPresent()) {
+            Company company = optionalCompany.get();
+            System.out.println(company.getName().length());
+            System.out.println(company.getName());
+        }
+
+    }
+
+    private static void company_with_shortest_name(List<Company> companies) {
+        Optional<Company> optionalCompany = companies.stream()
+                .min((company, t1) -> Integer.compare(company.getName().length(), t1.getName().length()));
+
+        if (optionalCompany.isPresent()) {
+            Company company = optionalCompany.get();
+            System.out.println(company.getName().length());
+            System.out.println(company.getName());
+        }
+    }
+
+    private static void companies_with_most_employees_from_kijev(List<Company> companies) {
+        Optional<Company> optionalCompany = companies.stream()
+                .filter(company -> company.getCityHeadquarters().equalsIgnoreCase("Kijev"))
+                .max((company, t1) -> Integer.compare(company.getEmployees(), t1.getEmployees()));
+
+        if (optionalCompany.isPresent()) {
+            Company company = optionalCompany.get();
+            System.out.println(company.getEmployees());
+            System.out.println(company.getName());
+        }
+    }
+
     private static void companies_warsaw_sorted_by_purchases_and_employees(List<Company> companies) {
         companies.stream()
                 .filter(company -> company.getCityHeadquarters().equalsIgnoreCase("Gdansk"))
@@ -538,7 +752,6 @@ public class Main {
                 })
                 .map(company -> company.getPurchaseList().size() + " " + company.getEmployees() + " " + company.getName()) // employees (liczba) + nazwa firmy
                 .forEach(System.out::println); // wypisz
-
     }
 
     private static void companies_from_london_sorted_by_employees(List<Company> companies) {
@@ -614,9 +827,13 @@ public class Main {
     // 18. Zwróć Mapę (Map<Product, Set<Company>>) w której kluczem jest typ kawy
     // (powinny być dwie, Arabica i Robusta) i wartością są listy firm które kupiły
     // podaną kawę chociaż raz.
-    private static void company_18_mapa_kaw(List<Company> companies) {
+    private static void company_18_mapa_kaw(final List<Company> companies) {
         Set<Product> typyKaw = companies.stream()
                 .flatMap(company -> company.getPurchaseList().stream())
+                // krzak - (zakup1 30 robusta) (zakup2 20 Arabica) (zakup3 15 Arabica)
+                // bush -  (zakup1 5 robusta) (zakup2 2 Robusta) (zakup3 15 Arabica) (zakup4 40 Arabica)
+                //
+                //  (zakup1 30 robusta) (zakup2 20 Arabica) (zakup3 15 Arabica)  (zakup1 5 robusta) (zakup2 2 Robusta) (zakup3 15 Arabica) (zakup4 40 Arabica)
                 .map(purchase -> purchase.getProduct())
                 .filter(product -> product.getName().startsWith("Coffee,"))
                 .collect(Collectors.toSet());
@@ -627,7 +844,7 @@ public class Main {
                         p -> companies.stream()
                                 .filter(company -> company.getPurchaseList()
                                         .stream()
-                                        .anyMatch(purchase -> purchase.getProduct() == p))
+                                        .anyMatch(purchase -> purchase.getProduct() == p)) // count() > 0
                                 .collect(Collectors.toSet()),
                         (e1, e2) -> {
                             Set<Company> s1 = new HashSet<>(e1);
