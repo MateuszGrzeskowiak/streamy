@@ -1,6 +1,7 @@
 package com.model.day1.company;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -493,11 +494,11 @@ public class Main {
 // 18. Zwróć Mapę (Map<Product, Set<Company>>) w której kluczem jest typ kawy (powinny być dwie, Arabica i Robusta) i wartością są listy firm które kupiły podaną kawę chociaż raz.
 //        company_18_mapa_kaw(companies);
 // 19. Zwróć firmę która w styczniu kupiła najwięcej paliwa (ropy)
-        company_19_most_oil_january(companies);
+//        company_19_most_oil_january(companies);
 // 20. Zwróć firmę której proporcja wydanych pieniędzy do ilości pracowników jest najwyższa
 //        company_20_money_vs_employees(companies);
 // 21. Zwróć firmę która najwięcej wydaje na artykuły biurowe
-//        company_21_most_sheeets(companies);
+//        company_21_most_sheets(companies);
 // 22. Zwróć firmy posortowane po ilości wydanych pieniędzy na paliwo
 //        company_22_sort_money(companies);
 // 23. Zwróć wszystkie produkty które kupione były na kilogramy
@@ -517,6 +518,7 @@ public class Main {
 // 30. Wypisz wszystkie zakupy firmy "Solwit".
 // 31. Wypisz wszystkie produkty które są tańsze (jednostkowo) niż 3$.
 // 32. Wypisz ile sprzedano najtańszego produktu
+        companies_sold_cheapest(companies);
 // 33. Firma "Take me home" zajmuje się transportem. Na początku działalności kupiła wiele samochodów do użytku. Oblicz ile litrów paliwa (średnio) spalają ich samochody (zakładamy że wszystkie palą benzynę i że tankowane są wszystkie.
 // 34. Wypisz firmę która zużywa najwięcej kawy
 // 35. Wypisz firmę która zużywa najwięcej na papier.
@@ -526,6 +528,165 @@ public class Main {
 // 39. Wypisz jaki produkt poza paliwem cieszy się największą popularnością (zwróć go) (find first)
 // 40. Znajdź produkty które były kupowane zarówno w kilogramach jak i w sztukach
 // 40. Wymyśl 5 ciekawych zapytań i spróbuj je zrealizować. Najciekawsze polecenie otrzyma nagrodę-niespodziankę z Baltimore :P
+    }
+
+    private static void companies_sold_cheapest(List<Company> companies) {
+        Optional<Product> najtanszy = companies.stream()
+                .flatMap(company -> company.getPurchaseList().stream())
+                .map(purchase -> purchase.getProduct())
+                .sorted((product, t1) -> Double.compare(product.getPrice(), t1.getPrice()))
+                .findFirst();
+
+        if (najtanszy.isPresent()) {
+            double sum = companies.stream()
+                    .flatMap(company -> company.getPurchaseList().stream())
+                    .filter(purchase -> purchase.getProduct().equals(najtanszy.get()))
+                    .mapToDouble(purchase -> purchase.getQuantity())
+                    .sum();
+            System.out.println("Suma wartosci "+ sum);
+        }
+
+    }
+
+    private static void company_29_detroit_bakery(List<Company> companies) {
+        Double sumOfSugar = companies.stream()
+                .filter(company -> company.getName().equalsIgnoreCase("Detroit Bakery"))
+                .flatMap(company -> company.getPurchaseList().stream())
+                .filter(purchase -> purchase.getProduct().getName().equalsIgnoreCase("Sugar"))
+                .mapToDouble(purchase -> purchase.getQuantity())
+                .sum();
+
+        System.out.println("Sum : " + sumOfSugar);
+    }
+
+    private static void company_28_rich_multi_city_companies(List<Company> companies) {
+        Map<String, List<String>> companyListMap = companies.stream()
+                .collect(Collectors.toMap(
+                        company -> company.getName(),
+                        company -> List.of(company.getCityHeadquarters()),
+                        (o, o2) -> {
+                            List<String> list = new ArrayList<>(o);
+                            list.addAll(o2);
+                            return list;
+                        }
+                ))
+                .entrySet()
+                .stream()
+                .sorted((s1, s2) -> {
+                    return Integer.compare(s1.getValue().size(), s2.getValue().size());
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+
+        companyListMap.entrySet().forEach(System.out::println);
+
+    }
+
+    private static void company_25_rent_in_february(List<Company> companies) {
+        Long howmany = companies.stream()
+                .flatMap(company -> company.getPurchaseList().stream())
+                .filter(purchase -> purchase.getProduct().getName().contains("rent"))
+                .filter(purchase -> purchase.getPurchaseDate().getMonth() == Month.FEBRUARY)
+                .count();
+
+        System.out.println(howmany);
+    }
+
+    private static void company_24_detroit_shopping_in_february(List<Company> companies) {
+        Set<Purchase> companySet = companies.stream()
+                .filter(company -> company.getCityHeadquarters().equalsIgnoreCase("Detroit"))
+                .flatMap(company -> company.getPurchaseList().stream())
+                .filter(purchase -> purchase.getPurchaseDate().getMonth() == Month.FEBRUARY)
+                .sorted((p1, p2) -> {
+                    return Double.compare(p1.getProduct().getPrice(), p2.getProduct().getPrice());
+                }).collect(Collectors.toCollection(LinkedHashSet::new));
+
+        companySet.forEach(System.out::println);
+    }
+
+    private static void company_23_wszystkie_produkty_na_kilogramy(List<Company> companies) {
+        Set<Product> products = companies.stream()
+                .flatMap(company -> company.getPurchaseList().stream())
+                .filter(purchase -> purchase.getUnit() == UNIT.KILOGRAM)
+                .map(purchase -> purchase.getProduct())
+                .collect(Collectors.toSet());
+
+        products.forEach(System.out::println);
+    }
+
+    private static void company_22_sort_money(List<Company> companies) {
+        List<Company> optionalCompany = companies.stream()
+                .sorted((c1, c2) -> {
+                    double sum1 = calculateMoneySpentOnFuel(c1);
+                    double sum2 = calculateMoneySpentOnFuel(c2);
+                    return Double.compare(sum2, sum1);
+                })
+                .collect(Collectors.toList());
+        optionalCompany.stream().map(Company::getName).forEach(System.out::println);
+    }
+
+    /**
+     * "Pen"
+     * "Pencil"
+     * "Clip"
+     * "Puncher"
+     * "Paper"
+     * "Scisors"
+     *
+     * @param companies
+     */
+    private static void company_21_most_sheets(List<Company> companies) {
+        Optional<Company> optionalCompany = companies.stream().max((c1, c2) -> {
+            double sum1 = calculateMoneySpentOnOfficeSupplies(c1);
+            double sum2 = calculateMoneySpentOnOfficeSupplies(c2);
+            return Double.compare(sum1, sum2);
+        });
+
+        if (optionalCompany.isPresent()) {
+            Company company = optionalCompany.get();
+            System.out.println(company.getName());
+        }
+    }
+
+    private static double calculateMoneySpentOnOfficeSupplies(Company c1) {
+        return c1.getPurchaseList().stream()
+                .filter(purchase -> isOfficeSupply(purchase))
+                .mapToDouble(purchase -> purchase.getQuantity() * purchase.getProduct().getPrice())
+                .sum();
+    }
+
+    private static double calculateMoneySpentOnFuel(Company c1) {
+        return c1.getPurchaseList().stream()
+                .filter(purchase -> isFuel(purchase))
+                .mapToDouble(purchase -> purchase.getQuantity() * purchase.getProduct().getPrice())
+                .sum();
+    }
+
+    private static boolean isFuel(Purchase purchase) {
+        return purchase.getProduct().getName().contains("Fuel");
+    }
+
+    private static boolean isOfficeSupply(Purchase purchase) {
+        return purchase.getProduct().getName().equalsIgnoreCase("Pen") ||
+                purchase.getProduct().getName().equalsIgnoreCase("Scisors") ||
+                purchase.getProduct().getName().equalsIgnoreCase("Paper") ||
+                purchase.getProduct().getName().equalsIgnoreCase("Pencil") ||
+                purchase.getProduct().getName().equalsIgnoreCase("Clip") ||
+                purchase.getProduct().getName().equalsIgnoreCase("Puncher");
+    }
+
+    private static void company_20_money_vs_employees(List<Company> companies) {
+        // proporcja wydanych pieniędzy do zatrudnianych prac. jest najwyzsza
+        Optional<Company> optionalCompany = companies.stream()
+                .max((c1, c2) -> {
+                    double prop1 = c1.getPurchaseList().stream().mapToDouble(p -> p.getQuantity() * p.getProduct().getPrice()).sum() / c1.getEmployees();
+                    double prop2 = c2.getPurchaseList().stream().mapToDouble(p -> p.getQuantity() * p.getProduct().getPrice()).sum() / c2.getEmployees();
+                    return Double.compare(prop1, prop2);
+                });
+
+        if (optionalCompany.isPresent()) {
+            Company company = optionalCompany.get();
+            System.out.println(company.getName());
+        }
     }
 
     private static void company_19_most_oil_january(List<Company> companies) {
